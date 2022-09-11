@@ -1,0 +1,65 @@
+version: "3.7"
+
+services:
+  app:
+    build:
+      args:
+        USERNAME: ${USERNAME}
+        UID: ${UID}
+        TIMEZONE: ${TIMEZONE}
+        SERVER_NAME: ${SERVER_NAME}
+      context: ./docker/bin/app/${PHP_VERSION}
+    container_name: "appname-app"
+    restart: "always"
+    ports:
+      - "${HTTP_PORT}:80"
+      - "${HTTPS_PORT}:443"
+    links:
+      - database
+    volumes:
+      - ./www:/var/www/html
+      - ./docker/config/php/php.ini:/usr/local/etc/php/php.ini
+      - ./docker/config/vhosts:/etc/apache2/sites-enabled
+      - ./docker/logs/apache2:/var/log/apache2
+      - ./docker/certs:/etc/apache2/ssl/
+    environment:
+      SERVER_NAME: ${SERVER_NAME}
+      SERVER_ALIAS: ${SERVER_ALIAS}
+      APACHE_DOCUMENT_ROOT: ${APACHE_DOCUMENT_ROOT}
+    networks:
+      appnet:
+        ipv4_address: 172.20.0.6
+
+  database:
+    build:
+      args:
+        USERNAME: ${USERNAME}
+      context: ./docker/bin/db/${DB_VERSION}
+    container_name: "appname-database"
+    restart: "always"
+    ports:
+      - "${MYSQL_PORT}:3306"
+    volumes:
+      - data:/var/lib/mysql
+      - ./docker/config/mysql/app.cnf:/etc/mysql/conf.d/app.cnf
+      - ./docker/storage/sql:/home/${USERNAME}/sql
+    environment:
+      MYSQL_ROOT_USER: ${MYSQL_ROOT_USER}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+
+  mailhog:
+    image: mailhog/mailhog
+    container_name: "appname-mailhog"
+    ports:
+      - "${MAILHOG_SMTP}:1025"
+      - "${MAILHOG_HTTP}:8025"
+
+volumes:
+  data:
+
+networks:
+  appnet:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/24

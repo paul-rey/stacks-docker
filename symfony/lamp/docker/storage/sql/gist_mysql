@@ -1,0 +1,11 @@
+IMPORT:
+
+pv intranet_YYYY_MM_DD.sql | mysql -u root -p intranet
+
+EXPORT:
+
+mysqldump -u root -p intranet | pv -W > intranet_YYYY_MM_DD.sql
+
+EXPORT GZIP:
+
+mysqldump -u root -p intranet | pv -W | gzip > intranet_YYYY_MM_DD.sql.gz
